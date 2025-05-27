@@ -15,7 +15,7 @@ def test_create_credit_card(client: TestClient, sample_customer_data, sample_cre
     data = response.json()
     assert data["card_number"] == card_data["card_number"]
     assert data["customer_id"] == customer_id
-    assert data["credit_limit"] == str(card_data["credit_limit"])
+    assert float(data["credit_limit"]) == card_data["credit_limit"]
     assert data["current_balance"] == "0.00"
     assert data["is_active"] == True
     assert "id" in data
