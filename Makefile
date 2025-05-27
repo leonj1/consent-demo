@@ -1,4 +1,4 @@
-.PHONY: start stop restart build
+.PHONY: start stop restart build test
 
 MUSIC_PORT ?= 8000
 
@@ -15,3 +15,6 @@ stop:
 	docker rm -f music-service || true
 
 restart: stop start
+
+test:
+	cd bank-service && python -m pytest -v
