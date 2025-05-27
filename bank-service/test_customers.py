@@ -50,6 +50,8 @@ def test_create_customer_duplicate_email(client: TestClient, sample_customer_dat
     response1 = client.post("/customers/", json=sample_customer_data)
     assert response1.status_code == 200
     
-    # Try to create customer with same email
+    # Try to create customer with same email - should fail with integrity error
     response2 = client.post("/customers/", json=sample_customer_data)
-    assert response2.status_code == 500  # SQLAlchemy IntegrityError
+    # FastAPI returns 500 for unhandled SQLAlchemy IntegrityError
+    assert response2.status_code == 500
+    assert "Internal Server Error" in response2.text
