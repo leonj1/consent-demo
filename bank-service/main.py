@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
 from decimal import Decimal
 import models
@@ -19,11 +20,15 @@ create_tables()
 # Customer endpoints
 @app.post("/customers/", response_model=schemas.Customer)
 def create_customer(customer: schemas.CustomerCreate, db: Session = Depends(get_db)):
-    db_customer = models.Customer(**customer.dict())
-    db.add(db_customer)
-    db.commit()
-    db.refresh(db_customer)
-    return db_customer
+    try:
+        db_customer = models.Customer(**customer.dict())
+        db.add(db_customer)
+        db.commit()
+        db.refresh(db_customer)
+        return db_customer
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already exists")
 
 @app.get("/customers/", response_model=List[schemas.Customer])
 def get_customers(db: Session = Depends(get_db)):
@@ -128,11 +133,15 @@ def create_credit_card(card: schemas.CreditCardCreate, db: Session = Depends(get
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    db_card = models.CreditCard(**card.dict())
-    db.add(db_card)
-    db.commit()
-    db.refresh(db_card)
-    return db_card
+    try:
+        db_card = models.CreditCard(**card.dict())
+        db.add(db_card)
+        db.commit()
+        db.refresh(db_card)
+        return db_card
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Credit card number already exists")
 
 @app.get("/credit-cards/", response_model=List[schemas.CreditCard])
 def get_credit_cards(db: Session = Depends(get_db)):
