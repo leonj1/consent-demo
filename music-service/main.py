@@ -73,7 +73,7 @@ def add_song_to_playlist(playlist_id: int, song: schemas.SongCreate, db: Session
 
 @app.get("/songs/", response_model=List[schemas.Song])
 def get_all_songs(db: Session = Depends(get_db)):
-    return db.query(models.Song).all()
+    return db.query(models.Song).filter(models.Song.playlist_id.isnot(None)).all()
 
 @app.get("/playlists/{playlist_id}/songs/", response_model=List[schemas.Song])
 def get_playlist_songs(playlist_id: int, db: Session = Depends(get_db)):

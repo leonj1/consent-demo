@@ -13,7 +13,7 @@ class Playlist(Base):
     description = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    songs = relationship("Song", back_populates="playlist")
+    songs = relationship("Song", back_populates="playlist", cascade="all, delete-orphan")
 
 class Song(Base):
     __tablename__ = "songs"
@@ -23,6 +23,6 @@ class Song(Base):
     artist = Column(String, nullable=False)
     album = Column(String)
     duration = Column(Integer)  # duration in seconds
-    playlist_id = Column(Integer, ForeignKey("playlists.id"))
+    playlist_id = Column(Integer, ForeignKey("playlists.id", ondelete="CASCADE"), nullable=False)
     
     playlist = relationship("Playlist", back_populates="songs")
