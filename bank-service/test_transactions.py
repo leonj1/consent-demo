@@ -21,7 +21,7 @@ def test_deposit_funds_success(client: TestClient, sample_customer_data, sample_
     assert response.status_code == 200
     data = response.json()
     assert "Successfully deposited $100.5" in data["message"]
-    assert data["new_balance"] == "100.50"
+    assert float(data["new_balance"]) == 100.50
 
 def test_deposit_funds_invalid_amount(client: TestClient, sample_customer_data, sample_account_data):
     customer_id, account_id = create_customer_and_account(client, sample_customer_data, sample_account_data)
@@ -62,7 +62,7 @@ def test_withdraw_funds_success(client: TestClient, sample_customer_data, sample
     assert response.status_code == 200
     data = response.json()
     assert "Successfully withdrew $75.25" in data["message"]
-    assert data["new_balance"] == "124.75"
+    assert float(data["new_balance"]) == 124.75
 
 def test_withdraw_funds_insufficient_balance(client: TestClient, sample_customer_data, sample_account_data):
     customer_id, account_id = create_customer_and_account(client, sample_customer_data, sample_account_data)

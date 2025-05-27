@@ -109,6 +109,8 @@ def test_create_credit_card_duplicate_number(client: TestClient, sample_customer
     response1 = client.post("/credit-cards/", json=card_data)
     assert response1.status_code == 200
     
-    # Try to create credit card with same number
+    # Try to create credit card with same number - should fail with integrity error
     response2 = client.post("/credit-cards/", json=card_data)
-    assert response2.status_code == 500  # SQLAlchemy IntegrityError
+    # FastAPI returns 500 for unhandled SQLAlchemy IntegrityError
+    assert response2.status_code == 500
+    assert "Internal Server Error" in response2.text

@@ -69,9 +69,9 @@ def test_get_account_transactions_multiple_transactions(client: TestClient, samp
     # Create multiple transactions
     transactions = [
         ("deposit", 1000.00, "Salary deposit"),
-        ("withdraw", 250.00, "Rent payment"),
+        ("withdrawal", 250.00, "Rent payment"),
         ("deposit", 50.00, "Cash deposit"),
-        ("withdraw", 30.00, "ATM withdrawal"),
+        ("withdrawal", 30.00, "ATM withdrawal"),
     ]
     
     for transaction_type, amount, description in transactions:
