@@ -1,0 +1,96 @@
+{
+  "Clients": [
+    {
+      "ClientId": "music-api-client",
+      "ClientName": "Music Service API",
+      "Description": "Client for Music Service API access",
+      "ClientSecrets": [
+        {
+          "Value": "K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=",
+          "Description": "music-api-secret-2024 (SHA256)"
+        }
+      ],
+      "AllowedGrantTypes": [ "client_credentials" ],
+      "AllowedScopes": [ 
+        "music.api", 
+        "music.read", 
+        "music.write" 
+      ],
+      "Claims": [
+        {
+          "Type": "client_id",
+          "Value": "music-api-client"
+        },
+        {
+          "Type": "service",
+          "Value": "music"
+        }
+      ]
+    },
+    {
+      "ClientId": "bank-api-client",
+      "ClientName": "Bank Service API",
+      "Description": "Client for Bank Service API access",
+      "ClientSecrets": [
+        {
+          "Value": "K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=",
+          "Description": "bank-api-secret-2024 (SHA256)"
+        }
+      ],
+      "AllowedGrantTypes": [ "client_credentials" ],
+      "AllowedScopes": [ 
+        "bank.api", 
+        "bank.read", 
+        "bank.write", 
+        "bank.transactions" 
+      ],
+      "Claims": [
+        {
+          "Type": "client_id",
+          "Value": "bank-api-client"
+        },
+        {
+          "Type": "service",
+          "Value": "bank"
+        }
+      ]
+    }
+  ],
+  "ApiScopes": [
+    {
+      "Name": "music.api",
+      "DisplayName": "Music API Access",
+      "Description": "Full access to Music API"
+    },
+    {
+      "Name": "music.read",
+      "DisplayName": "Music Read Access",
+      "Description": "Read access to Music API"
+    },
+    {
+      "Name": "music.write",
+      "DisplayName": "Music Write Access", 
+      "Description": "Write access to Music API"
+    },
+    {
+      "Name": "bank.api",
+      "DisplayName": "Bank API Access",
+      "Description": "Full access to Bank API"
+    },
+    {
+      "Name": "bank.read",
+      "DisplayName": "Bank Read Access",
+      "Description": "Read access to Bank API"
+    },
+    {
+      "Name": "bank.write",
+      "DisplayName": "Bank Write Access",
+      "Description": "Write access to Bank API"
+    },
+    {
+      "Name": "bank.transactions",
+      "DisplayName": "Bank Transactions",
+      "Description": "Access to bank transaction operations"
+    }
+  ]
+}
