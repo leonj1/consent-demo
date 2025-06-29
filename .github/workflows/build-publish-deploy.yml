@@ -1,4 +1,4 @@
-name: Build, publish, and deploy.
+name: Build, Push to ECR, and Deploy
 on:
   workflow_dispatch:
   workflow_run:
@@ -27,11 +27,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Build artifact
+      - name: Build Docker images
         run: |
           make build
-          echo "Built artifact:"
-          ls -la dist/
+          echo "Built Docker images:"
+          docker images
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION || 'us-east-1' }} | docker login --username AWS --password-stdin 945513556588.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Push images to ECR
+        env:
+          CI: true
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: |
+          echo "Pushing Docker images to ECR..."
+          make push
+
+      - name: Build artifact for S3
+        run: |
+          echo "Building artifact for S3 deployment..."
+          # Original build artifact command if needed
+          if [ -d "dist" ]; then
+            echo "Built artifact:"
+            ls -la dist/
+          fi
 
       - name: Publish to AWS S3
         run: |
