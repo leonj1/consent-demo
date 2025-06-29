@@ -51,9 +51,6 @@ cd bank-service && python -m pytest -v tests/test_customers.py::test_create_cust
 # Test identity server token acquisition
 ./scripts/identity-server/test-tokens.sh
 
-# Setup ECR repositories (run once before first push)
-./scripts/aws/setup-ecr-repos.sh
-
 # Push all Docker images to AWS ECR
 make push
 
@@ -123,11 +120,13 @@ npm run build      # Build for production
 ## AWS ECR Deployment
 
 ### Repository Structure
-Each service has its own ECR repository:
-- `945513556588.dkr.ecr.us-east-1.amazonaws.com/consent-demo/music-service`
-- `945513556588.dkr.ecr.us-east-1.amazonaws.com/consent-demo/bank-service`
-- `945513556588.dkr.ecr.us-east-1.amazonaws.com/consent-demo/music-service-ui`
-- `945513556588.dkr.ecr.us-east-1.amazonaws.com/consent-demo/bank-service-ui`
+All services share a single ECR repository with service-specific tags:
+- Repository: `945513556588.dkr.ecr.us-east-1.amazonaws.com/my-app-repository`
+- Image tags:
+  - `music-service-v1.2.3` / `music-service-latest`
+  - `bank-service-v1.2.3` / `bank-service-latest`
+  - `music-service-ui-v1.2.3` / `music-service-ui-latest`
+  - `bank-service-ui-v1.2.3` / `bank-service-ui-latest`
 
 ### Versioning Strategy
 - **Production (master branch)**: Semantic versioning with git tags (e.g., `v1.2.3`)
@@ -146,5 +145,5 @@ Each service has its own ECR repository:
 ### First-time Setup
 Before pushing images for the first time:
 1. Ensure AWS credentials are in `.env` file
-2. Run `./scripts/aws/setup-ecr-repos.sh` to create repositories and lifecycle policies
+2. Ensure the ECR repository `my-app-repository` exists in your AWS account
 3. Use `make push` to build and push all images

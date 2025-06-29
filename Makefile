@@ -15,10 +15,7 @@ BANK_UI_PORT ?= 8200
 
 # ECR configuration
 ECR_REGISTRY = 945513556588.dkr.ecr.us-east-1.amazonaws.com
-ECR_MUSIC_SERVICE = consent-demo/music-service
-ECR_BANK_SERVICE = consent-demo/bank-service
-ECR_MUSIC_SERVICE_UI = consent-demo/music-service-ui
-ECR_BANK_SERVICE_UI = consent-demo/bank-service-ui
+ECR_REPOSITORY = my-app-repository
 
 # Version detection using git tags
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
@@ -74,28 +71,28 @@ push: build
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
 	@echo "Pushing music-service with version $(VERSION)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):$(VERSION)
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):latest
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):latest
+	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-$(VERSION)
+	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-latest
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-$(VERSION)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-latest
 	
 	@echo "Pushing bank-service with version $(VERSION)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):$(VERSION)
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):latest
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):latest
+	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-$(VERSION)
+	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-latest
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-$(VERSION)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-latest
 	
 	@echo "Pushing music-service-ui with version $(VERSION)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):$(VERSION)
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):latest
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):latest
+	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-$(VERSION)
+	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-latest
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-$(VERSION)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-latest
 	
 	@echo "Pushing bank-service-ui with version $(VERSION)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):$(VERSION)
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):latest
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):latest
+	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-$(VERSION)
+	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-latest
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-$(VERSION)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-latest
 	
 	@echo "All images pushed successfully to ECR with version $(VERSION)!"
 
@@ -105,20 +102,20 @@ push-dev: build
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
 	@echo "Pushing music-service (dev)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
+	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-dev-$(BRANCH)-$(SHORT_HASH)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-dev-$(BRANCH)-$(SHORT_HASH)
 	
 	@echo "Pushing bank-service (dev)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
+	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-dev-$(BRANCH)-$(SHORT_HASH)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-dev-$(BRANCH)-$(SHORT_HASH)
 	
 	@echo "Pushing music-service-ui (dev)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
+	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
 	
 	@echo "Pushing bank-service-ui (dev)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
+	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
+	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
 	
 	@echo "Development images pushed with tag: dev-$(BRANCH)-$(SHORT_HASH)"
 
