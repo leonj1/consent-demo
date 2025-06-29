@@ -121,7 +121,7 @@ npm run build      # Build for production
 
 ### Repository Structure
 All services share a single ECR repository with service-specific tags:
-- Repository: `945513556588.dkr.ecr.us-east-1.amazonaws.com/my-app-repository`
+- Repository: `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/my-app-repository`
 - Image tags:
   - `music-service-v1.2.3` / `music-service-latest`
   - `bank-service-v1.2.3` / `bank-service-latest`

@@ -5,7 +5,6 @@
 export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 export AWS_SESSION_TOKEN
-export AWS_REGION
 
 # Port configuration
 MUSIC_PORT ?= 8101
@@ -14,7 +13,10 @@ MUSIC_UI_PORT ?= 8100
 BANK_UI_PORT ?= 8200
 
 # ECR configuration
-ECR_REGISTRY = 945513556588.dkr.ecr.us-east-1.amazonaws.com
+AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query 'Account' --output text 2>/dev/null || echo "000000000000")
+AWS_REGION ?= us-east-1
+export AWS_REGION
+ECR_REGISTRY = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 ECR_REPOSITORY = my-app-repository
 
 # Service names
