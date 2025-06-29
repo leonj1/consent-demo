@@ -17,6 +17,9 @@ BANK_UI_PORT ?= 8200
 ECR_REGISTRY = 945513556588.dkr.ecr.us-east-1.amazonaws.com
 ECR_REPOSITORY = my-app-repository
 
+# Service names
+SERVICES = music-service bank-service music-service-ui bank-service-ui
+
 # Version detection using git tags
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
@@ -70,29 +73,13 @@ push: build
 	@echo "Authenticating with AWS ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
-	@echo "Pushing music-service with version $(VERSION)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-$(VERSION)
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-latest
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-latest
-	
-	@echo "Pushing bank-service with version $(VERSION)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-$(VERSION)
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-latest
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-latest
-	
-	@echo "Pushing music-service-ui with version $(VERSION)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-$(VERSION)
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-latest
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-latest
-	
-	@echo "Pushing bank-service-ui with version $(VERSION)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-$(VERSION)
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-latest
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-latest
+	@for service in $(SERVICES); do \
+		echo "Pushing $$service with version $(VERSION)..."; \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-$(VERSION); \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-latest; \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-$(VERSION); \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-latest; \
+	done
 	
 	@echo "All images pushed successfully to ECR with version $(VERSION)!"
 
@@ -101,21 +88,11 @@ push-dev: build
 	@echo "Authenticating with AWS ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
-	@echo "Pushing music-service (dev)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Pushing bank-service (dev)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Pushing music-service-ui (dev)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):music-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Pushing bank-service-ui (dev)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):bank-service-ui-dev-$(BRANCH)-$(SHORT_HASH)
+	@for service in $(SERVICES); do \
+		echo "Pushing $$service (dev)..."; \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH)-$(SHORT_HASH); \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH)-$(SHORT_HASH); \
+	done
 	
 	@echo "Development images pushed with tag: dev-$(BRANCH)-$(SHORT_HASH)"
 
