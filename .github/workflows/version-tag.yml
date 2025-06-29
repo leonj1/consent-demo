@@ -1,0 +1,42 @@
+name: Create Version Tag
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  version-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch
+          tag_prefix: v
+          create_annotated_tag: true
+          dry_run: false
+          
+      - name: Create Release
+        if: steps.tag_version.outputs.new_tag
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: |
+            Changes in this Release:
+            - ${{ steps.tag_version.outputs.changelog }}
+          draft: false
+          prerelease: false

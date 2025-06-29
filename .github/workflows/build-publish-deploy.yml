@@ -1,0 +1,137 @@
+name: Build, Push to ECR, and Deploy
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Create Version Tag"]
+    types:
+      - completed
+    branches:
+      - master
+
+jobs:
+  build-publish-deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # If your secrets are environment secrets, remember to add your environment:
+    # environment: <YOUR_ENVIRONMENT_NAME>
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Build Docker images
+        run: |
+          make build
+          echo "Built Docker images:"
+          docker images
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION || 'us-east-1' }} | docker login --username AWS --password-stdin 945513556588.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Push images to ECR
+        env:
+          CI: true
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: |
+          echo "Pushing Docker images to ECR..."
+          make push
+
+      - name: Build artifact for S3
+        run: |
+          echo "Building artifact for S3 deployment..."
+          # Original build artifact command if needed
+          if [ -d "dist" ]; then
+            echo "Built artifact:"
+            ls -la dist/
+          fi
+
+      - name: Publish to AWS S3
+        run: |
+          # Run the Makefile publish target which handles upload and retention
+          export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          make publish
+
+      # Once validated, you can re-enable the Tailscale connection step
+      - name: Connect Tailscale
+        # You can comment this out initially to focus on secret validation
+        # then uncomment once you confirm the above steps pass.
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Set up SSH Agent for deployment
+        uses: webfactory/ssh-agent@v0.9.0 # This action loads your private key
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }} # Inject the private key from secrets
+
+      - name: Deploy to joseserver
+        run: |
+          # Get the current version
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
+          ARTIFACT_NAME="joseserver-deployments-${VERSION}.tar.gz"
+          S3_PREFIX="joseserver-deployments"
+          
+          # Download from S3 and pipe directly through SSH to the server
+          aws s3 cp s3://area51dapidi/${S3_PREFIX}/${ARTIFACT_NAME} - | \
+          ssh -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null root@100.76.110.32 "
+            set -e  # Exit on any error
+            
+            # Create a temporary directory
+            TEMP_DIR=\$(mktemp -d -t caddy-deploy-XXXXXX)
+            
+            # Set up cleanup trap to ensure temp directory is removed on exit
+            cleanup() {
+              if [ -n \"\$TEMP_DIR\" ] && [ -d \"\$TEMP_DIR\" ]; then
+                echo \"Cleaning up temporary directory...\"
+                rm -rf \"\$TEMP_DIR\"
+              fi
+            }
+            trap cleanup EXIT
+            
+            echo \"Working in temporary directory: \$TEMP_DIR\"
+            cd \$TEMP_DIR
+            
+            # Receive the artifact from stdin
+            echo \"Receiving artifact...\"
+            cat > ${ARTIFACT_NAME}
+            
+            # Extract the artifact
+            echo \"Extracting artifact...\"
+            tar -xzf ${ARTIFACT_NAME}
+            
+            # Backup current Caddyfile
+            if [ -f /etc/caddy/Caddyfile ]; then
+              cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.backup-\$(date +%Y%m%d-%H%M%S)
+              echo \"Current Caddyfile backed up\"
+            fi
+            
+            # Validate new Caddyfile
+            echo \"Validating new Caddyfile...\"
+            if caddy validate --config ./Caddyfile; then
+              # Deploy new Caddyfile
+              cp ./Caddyfile /etc/caddy/Caddyfile
+              echo \"New Caddyfile deployed\"
+              
+              # Reload Caddy
+              systemctl reload caddy
+              echo \"Caddy service reloaded successfully\"
+            else
+              echo \"ERROR: Caddyfile validation failed!\"
+              exit 1
+            fi
+            
+            echo \"Deployment successful!\"
+          "
+
