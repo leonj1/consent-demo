@@ -132,7 +132,7 @@ All services share a single ECR repository with service-specific tags:
 - **Production (master branch)**: Semantic versioning with git tags (e.g., `v1.2.3`)
   - Tags are automatically created when pushing to master via GitHub Actions
   - Each push to master bumps the patch version by default
-- **Development branches**: Tagged as `dev-<branch>-<commit-hash>`
+- **Development branches**: Tagged as `dev-<branch>-<commit-hash>` (branch names are sanitized)
 - A `latest` tag always points to the most recent production version
 - Lifecycle policies automatically retain only the 5 most recent images
 

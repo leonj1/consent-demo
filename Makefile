@@ -25,6 +25,8 @@ SERVICES = music-service bank-service music-service-ui bank-service-ui
 # Version detection using git tags
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+# Sanitize branch name for Docker tags (replace slashes with dashes, remove other invalid chars)
+BRANCH_SAFE := $(shell echo "$(BRANCH)" | sed 's/[^a-zA-Z0-9._-]/-/g')
 SHORT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # Determine if we're on a tagged commit
@@ -86,20 +88,21 @@ push: build
 	@echo "All images pushed successfully to ECR with version $(VERSION)!"
 
 push-dev: build
-	@echo "Building development version: dev-$(BRANCH)-$(SHORT_HASH)"
+	@echo "Building development version: dev-$(BRANCH_SAFE)-$(SHORT_HASH)"
 	@echo "Authenticating with AWS ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
 	@for service in $(SERVICES); do \
 		echo "Pushing $$service (dev)..."; \
-		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH)-$(SHORT_HASH); \
-		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH)-$(SHORT_HASH); \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH_SAFE)-$(SHORT_HASH); \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH_SAFE)-$(SHORT_HASH); \
 	done
 	
-	@echo "Development images pushed with tag: dev-$(BRANCH)-$(SHORT_HASH)"
+	@echo "Development images pushed with tag: dev-$(BRANCH_SAFE)-$(SHORT_HASH)"
 
 version:
 	@echo "Current version: $(VERSION)"
 	@echo "Branch: $(BRANCH)"
+	@echo "Branch (sanitized): $(BRANCH_SAFE)"
 	@echo "Commit: $(SHORT_HASH)"
 	@echo "Tagged: $(IS_TAGGED)"
