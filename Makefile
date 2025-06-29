@@ -5,7 +5,6 @@
 export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 export AWS_SESSION_TOKEN
-export AWS_REGION
 
 # Port configuration
 MUSIC_PORT ?= 8101
@@ -14,15 +13,20 @@ MUSIC_UI_PORT ?= 8100
 BANK_UI_PORT ?= 8200
 
 # ECR configuration
-ECR_REGISTRY = 945513556588.dkr.ecr.us-east-1.amazonaws.com
-ECR_MUSIC_SERVICE = consent-demo/music-service
-ECR_BANK_SERVICE = consent-demo/bank-service
-ECR_MUSIC_SERVICE_UI = consent-demo/music-service-ui
-ECR_BANK_SERVICE_UI = consent-demo/bank-service-ui
+AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --query 'Account' --output text 2>/dev/null || echo "000000000000")
+AWS_REGION ?= us-east-1
+export AWS_REGION
+ECR_REGISTRY = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+ECR_REPOSITORY = my-app-repository
+
+# Service names
+SERVICES = music-service bank-service music-service-ui bank-service-ui
 
 # Version detection using git tags
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0")
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+# Sanitize branch name for Docker tags (replace slashes with dashes, remove other invalid chars)
+BRANCH_SAFE := $(shell echo "$(BRANCH)" | sed 's/[^a-zA-Z0-9._-]/-/g')
 SHORT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # Determine if we're on a tagged commit
@@ -73,57 +77,32 @@ push: build
 	@echo "Authenticating with AWS ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
-	@echo "Pushing music-service with version $(VERSION)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):$(VERSION)
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):latest
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):latest
-	
-	@echo "Pushing bank-service with version $(VERSION)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):$(VERSION)
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):latest
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):latest
-	
-	@echo "Pushing music-service-ui with version $(VERSION)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):$(VERSION)
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):latest
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):latest
-	
-	@echo "Pushing bank-service-ui with version $(VERSION)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):$(VERSION)
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):latest
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):$(VERSION)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):latest
+	@for service in $(SERVICES); do \
+		echo "Pushing $$service with version $(VERSION)..."; \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-$(VERSION); \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-latest; \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-$(VERSION); \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-latest; \
+	done
 	
 	@echo "All images pushed successfully to ECR with version $(VERSION)!"
 
 push-dev: build
-	@echo "Building development version: dev-$(BRANCH)-$(SHORT_HASH)"
+	@echo "Building development version: dev-$(BRANCH_SAFE)-$(SHORT_HASH)"
 	@echo "Authenticating with AWS ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	
-	@echo "Pushing music-service (dev)..."
-	docker tag music-service:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
+	@for service in $(SERVICES); do \
+		echo "Pushing $$service (dev)..."; \
+		docker tag $$service:latest $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH_SAFE)-$(SHORT_HASH); \
+		docker push $(ECR_REGISTRY)/$(ECR_REPOSITORY):$$service-dev-$(BRANCH_SAFE)-$(SHORT_HASH); \
+	done
 	
-	@echo "Pushing bank-service (dev)..."
-	docker tag bank-service:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE):dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Pushing music-service-ui (dev)..."
-	docker tag music-service-ui:latest $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_MUSIC_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Pushing bank-service-ui (dev)..."
-	docker tag bank-service-ui:latest $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	docker push $(ECR_REGISTRY)/$(ECR_BANK_SERVICE_UI):dev-$(BRANCH)-$(SHORT_HASH)
-	
-	@echo "Development images pushed with tag: dev-$(BRANCH)-$(SHORT_HASH)"
+	@echo "Development images pushed with tag: dev-$(BRANCH_SAFE)-$(SHORT_HASH)"
 
 version:
 	@echo "Current version: $(VERSION)"
 	@echo "Branch: $(BRANCH)"
+	@echo "Branch (sanitized): $(BRANCH_SAFE)"
 	@echo "Commit: $(SHORT_HASH)"
 	@echo "Tagged: $(IS_TAGGED)"

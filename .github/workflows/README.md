@@ -41,10 +41,7 @@ Add these secrets in your repository settings (Settings → Secrets and variable
 
 Before the workflows can push to ECR, you need to:
 
-1. Create ECR repositories:
-   ```bash
-   ./scripts/aws/setup-ecr-repos.sh
-   ```
+1. Ensure the ECR repository `my-app-repository` exists in your AWS account
 
 2. Ensure AWS credentials have permissions for:
    - `ecr:GetAuthorizationToken`
@@ -60,12 +57,12 @@ Before the workflows can push to ECR, you need to:
 2. **version-tag.yml** creates semantic version (e.g., v1.2.3)
 3. **build-publish-deploy.yml** triggers:
    - Builds Docker images
-   - Tags images with version: `v1.2.3` and `latest`
-   - Pushes to ECR repositories:
-     - `consent-demo/music-service`
-     - `consent-demo/bank-service`
-     - `consent-demo/music-service-ui`
-     - `consent-demo/bank-service-ui`
+   - Tags images with version and service name
+   - Pushes to ECR repository `my-app-repository` with tags:
+     - `music-service-v1.2.3` / `music-service-latest`
+     - `bank-service-v1.2.3` / `bank-service-latest`
+     - `music-service-ui-v1.2.3` / `music-service-ui-latest`
+     - `bank-service-ui-v1.2.3` / `bank-service-ui-latest`
    - Deploys to production server
 
 ## Version Management
